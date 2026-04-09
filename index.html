@@ -659,8 +659,7 @@
         document.getElementById("batchDeleteBtn").onclick = () => batchDeleteSelected();
         document.getElementById("clearSelectionBtn").onclick = () => { selectedDocs.clear(); renderMain(); };
     }
-    
-    function renderLogin() {
+        function renderLogin() {
         const empresas = getEmpresas();
         document.getElementById("app").innerHTML = `<div class="login-container"><div class="login-card"><h1>📁 DocManager</h1><p style="margin-bottom:24px;">Multi-Empresa · Gestão Documental</p><input type="text" id="loginUser" placeholder="Usuário"><input type="password" id="loginPass" placeholder="Senha" style="margin-top:12px;"><select id="loginEmpresa" style="margin-top:12px;">${empresas.map(e => `<option value="${e}">${e}</option>`).join('')}</select><button id="doLogin" style="margin-top:20px;">Entrar</button><p style="margin-top:16px; font-size:12px; text-align:center;">admin / admin123</p></div></div>`;
         document.getElementById("doLogin").onclick = () => { const u = document.getElementById("loginUser").value.trim(), p = document.getElementById("loginPass").value.trim(), e = document.getElementById("loginEmpresa").value; const user = getUsers().find(us => us.username === u && us.password === p && us.empresa === e); if (user) { currentUser = user; currentEmpresa = e; currentFolderId = null; selectedDocs.clear(); saveSession(); renderMain(); } else showToast("Credenciais inválidas"); };
@@ -671,3 +670,4 @@
 </script>
 </body>
 </html>
+   
