@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>DocManager Pro - Sistema Multi-Empresa</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif; background: #f1f5f9; min-height: 100vh; overflow-x: hidden; }
+        .login-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #1a4a6e 0%, #2c7da0 100%); padding: 20px; }
+        .login-card { background: white; border-radius: 20px; padding: 32px 24px; width: 100%; max-width: 400px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+        .login-card h1 { font-size: 28px; margin-bottom: 8px; color: #1a4a6e; }
+        input, select, button { font-size: 14px; border-radius: 8px; border: 1px solid #e2e8f0; padding: 10px 14px; transition: 0.2s; background: #fff; width: 100%; }
+        button { background: #f1f5f9; color: #1e293b; font-weight: 500; border: none; cursor: pointer; }
+        button:hover { background: #e2e8f0; }
+        .main-layout { display: flex; flex-direction: column; height: 100vh; background: #f1f5f9; }
+        .sidebar { background: white; border-radius: 0; display: flex; flex-direction: column; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); max-height: 45%; overflow: hidden; }
+        .sidebar-header { padding: 12px 16px; border-bottom: 1px solid #eef2f6; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+        .sidebar-header h2 { font-size: 16px; color: #1a4a6e; }
+        .user-info { background: #f8fafc; border-radius: 10px; padding: 6px 10px; font-size: 11px; }
+        .folder-tree-container { flex: 1; overflow-y: auto; padding: 8px; max-height: 200px; }
+        .tree-node { list-style: none; }
+        .tree-item-wrapper { display: flex; align-items: center; padding: 6px 8px; margin: 2px 0; border-radius: 8px; cursor: pointer; transition: all 0.15s; flex-wrap: wrap; }
+        .tree-item-wrapper:hover { background: #f1f5f9; }
+        .tree-item-wrapper.active { background: #e0f2fe; }
+        .expand-icon { width: 20px; text-align: center; cursor: pointer; font-size: 10px; color: #1e293b; }
+        .folder-icon { width: 20px; margin-right: 6px; font-size: 14px; color: #1e293b; }
+        .folder-name { flex: 1; font-size: 12px; font-weight: 500; color: #1e293b; }
+        .folder-actions { display: flex; gap: 2px; opacity: 0; transition: opacity 0.15s; }
+        .tree-item-wrapper:hover .folder-actions { opacity: 1; }
+        .icon-btn { background: #f1f5f9; border: none; cursor: pointer; padding: 4px 6px; border-radius: 6px; font-size: 11px; color: #1e293b; }
+        .children-container { margin-left: 20px; }
+        .sidebar-footer { padding: 10px 12px; border-top: 1px solid #eef2f6; display: flex; gap: 8px; flex-wrap: wrap; }
+        .config-btn { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; background: #f1f5f9; border: none; cursor: pointer; font-size: 12px; color: #1e293b; flex: 1; justify-content: center; }
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 12px; }
+        .top-bar { background: white; border-radius: 16px; padding: 10px 12px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .breadcrumb-area { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 11px; color: #1e293b; }
+        .breadcrumb-item { cursor: pointer; color: #2c7da0; font-weight: 500; }
+        .upload-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .upload-btn { background: #f1f5f9; color: #1e293b; padding: 6px 12px; font-size: 12px; border-radius: 8px; flex: 1; text-align: center; }
+        .drag-message { font-size: 10px; color: #64748b; background: #f8fafc; padding: 4px 8px; border-radius: 8px; text-align: center; }
+        .view-controls { display: flex; gap: 6px; justify-content: flex-end; }
+        .view-btn { background: #f1f5f9; border: none; padding: 5px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; color: #1e293b; }
+        .view-btn.active { background: #2c7da0; color: white; }
+        .progress-bar-container { background: white; border-radius: 12px; padding: 8px 12px; margin-bottom: 12px; display: none; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .progress-bar-container.active { display: flex; }
+        .progress-info { font-size: 11px; color: #1e293b; }
+        .progress-bar-wrapper { flex: 1; height: 6px; background: #e2e8f0; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #10b981; width: 0%; transition: width 0.3s ease; border-radius: 10px; }
+        .multi-action-bar { background: #f1f5f9; border-radius: 10px; padding: 8px 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border-left: 3px solid #2c7da0; }
+        .multi-action-bar .selected-info { font-size: 11px; font-weight: 500; color: #1e293b; }
+        .multi-action-btn { background: #f1f5f9; color: #1e293b; border: none; padding: 5px 12px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 500; width: auto; }
+        .multi-action-btn.danger { background: #fee2e2; color: #dc2626; }
+        .multi-action-btn.danger:hover { background: #fecaca; }
+        .documents-container { flex: 1; background: white; border-radius: 16px; overflow: auto; box-shadow: 0 1px 2px rgba(0,0,0,0.03); transition: all 0.2s; }
+        .documents-container.drag-over { background: #f0f9ff; border: 2px dashed #2c7da0; }
+        .docs-table { width: 100%; border-collapse: collapse; font-size: 11px; display: block; overflow-x: auto; }
+        .docs-table thead, .docs-table tbody { display: block; }
+        .docs-table tr { display: flex; flex-wrap: wrap; border-bottom: 1px solid #f0f2f5; padding: 8px; }
+        .docs-table th, .docs-table td { flex: 1; min-width: 80px; padding: 4px 6px; text-align: left; }
+        .docs-table th { background: #fafcff; font-weight: 600; color: #475569; font-size: 10px; position: sticky; top: 0; background: white; z-index: 10; }
+        .action-buttons-cell { white-space: nowrap; width: 1%; }
+        .action-buttons-group { display: flex; gap: 4px; flex-wrap: nowrap; }
+        .docs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; padding: 12px; }
+        .grid-card { background: white; border: 1px solid #eef2f6; border-radius: 12px; padding: 10px; transition: all 0.2s; cursor: pointer; position: relative; }
+        .grid-card .doc-checkbox { position: absolute; top: 6px; left: 6px; width: 14px; height: 14px; }
+        .grid-preview { width: 100%; height: 80px; background: #f8fafc; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 8px; }
+        .action-icon { background: #f1f5f9; border: none; cursor: pointer; padding: 4px 8px; border-radius: 6px; font-size: 11px; color: #1e293b; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
+        .action-icon:hover { background: #e2e8f0; }
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 3000; backdrop-filter: blur(4px); padding: 16px; }
+        .modal-content { background: white; border-radius: 20px; padding: 20px; max-width: 95%; width: 500px; max-height: 85vh; overflow-y: auto; }
+        .folder-option { padding: 8px 12px; cursor: pointer; border-radius: 8px; margin: 2px 0; font-size: 12px; color: #1e293b; }
+        .folder-option:hover { background: #e0e7ff; }
+        .folder-option.selected { background: #2c7da0; color: white; }
+        .fullscreen-viewer { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 4000; }
+        .fullscreen-viewer img { max-width: 95%; max-height: 95%; object-fit: contain; }
+        .toast { position: fixed; bottom: 20px; left: 20px; right: 20px; background: #1e293b; color: white; padding: 10px 16px; border-radius: 40px; z-index: 5000; font-size: 12px; text-align: center; animation: fadeOut 3s forwards; }
+        @keyframes fadeOut { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+        .hidden { display: none; }
+        .history-list { max-height: 300px; overflow-y: auto; }
+        .history-item { padding: 8px; border-bottom: 1px solid #eef2f6; font-size: 11px; }
+        .history-date { color: #64748b; font-size: 10px; }
+        video { width: 100%; border-radius: 8px; background: #000; }
+        .page-preview { display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 8px; margin: 5px 0; border-radius: 8px; }
+        @media (min-width: 768px) {
+            .main-layout { flex-direction: row; }
+            .sidebar { width: 300px; max-height: 100vh; border-radius: 0 20px 20px 0; box-shadow: 4px 0 20px rgba(0,0,0,0.05); }
+            .folder-tree-container { max-height: none; padding: 12px; }
+            .top-bar { flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 12px 20px; }
+            .upload-group { flex-wrap: nowrap; }
+            .docs-table { display: table; }
+            .docs-table thead, .docs-table tbody { display: table-row-group; }
+            .docs-table tr { display: table-row; padding: 0; }
+            .docs-table th, .docs-table td { display: table-cell; padding: 10px 12px; }
+            .docs-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; padding: 16px; }
+        }
+        @media (max-width: 480px) {
+            .login-card { padding: 24px 20px; }
+            .upload-btn { font-size: 11px; padding: 5px 8px; }
+            .action-icon { padding: 3px 6px; font-size: 10px; }
+            .grid-card { padding: 8px; }
+            .grid-preview { height: 70px; font-size: 28px; }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+    // ==================== MODELO DE DADOS ====================
+    function loadData() {
+        if (!localStorage.getItem("empresas")) localStorage.setItem("empresas", JSON.stringify(["Matriz"]));
+        if (!localStorage.getItem("users")) localStorage.setItem("users", JSON.stringify([
+            { username: "admin", password: "admin123", empresa: "Matriz", role: "global_admin" }
+        ]));
+        if (!localStorage.getItem("pastas")) localStorage.setItem("pastas", JSON.stringify([]));
+        if (!localStorage.getItem("documentos")) localStorage.setItem("documentos", JSON.stringify([]));
+        if (!localStorage.getItem("expandedFolders")) localStorage.setItem("expandedFolders", JSON.stringify({}));
+    }
+
+    function getEmpresas() { return JSON.parse(localStorage.getItem("empresas")); }
+    function saveEmpresas(e) { localStorage.setItem("empresas", JSON.stringify(e)); }
+    function getUsers() { return JSON.parse(localStorage.getItem("users")); }
+    function saveUsers(u) { localStorage.setItem("users", JSON.stringify(u)); }
+    function getPastas() { return JSON.parse(localStorage.getItem("pastas")); }
+    function savePastas(p) { localStorage.setItem("pastas", JSON.stringify(p)); }
+    function getDocumentos() { return JSON.parse(localStorage.getItem("documentos")); }
+    function saveDocumentos(d) { localStorage.setItem("documentos", JSON.stringify(d)); }
+    function getExpandedFolders() { return JSON.parse(localStorage.getItem("expandedFolders")) || {}; }
+    function saveExpandedFolders(exp) { localStorage.setItem("expandedFolders", JSON.stringify(exp)); }
+
+    let currentUser = null, currentEmpresa = "", currentFolderId = null;
+    let viewMode = "list";
+    let selectedDocs = new Set();
+    let cameraPages = [];
+    let currentStream = null;
+    let isUploading = false;
+
+    function showToast(msg) {
+        let existing = document.querySelector(".toast");
+        if (existing) existing.remove();
+        const toast = document.createElement("div");
+        toast.className = "toast";
+        toast.innerText = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    function formatFileSize(bytes) {
+        if (!bytes || bytes === 0) return '-';
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(1024));
+        return Math.round(bytes / Math.pow(1024, i)) + ' ' + sizes[i];
+    }
+
+    function addHistory(docId, action, details) {
+        let docs = getDocumentos();
+        const doc = docs.find(d => d.id === docId);
+        if (doc) {
+            if (!doc.history) doc.history = [];
+            doc.history.push({ date: new Date().toISOString(), user: currentUser.username, action: action, details: details });
+            saveDocumentos(docs);
+        }
+    }
+
+    function showHistoryModal(docId, docName) {
+        const docs = getDocumentos();
+        const doc = docs.find(d => d.id === docId);
+        if (!doc) return;
+        const history = doc.history || [];
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `<div class="modal-content"><h3 style="margin-bottom:16px;">📖 Histórico: ${docName}</h3><div class="history-list">${history.length === 0 ? '<div style="padding:20px; text-align:center;">Nenhum registro</div>' : history.map(h => `<div class="history-item"><div><strong>${h.action}</strong></div><div>${h.details}</div><div class="history-date">👤 ${h.user} • ${new Date(h.date).toLocaleString()}</div></div>`).join('')}</div><button id="closeHistoryBtn" style="margin-top:20px; width:100%;">Fechar</button></div>`;
+        document.body.appendChild(modal);
+        document.getElementById('closeHistoryBtn').onclick = () => modal.remove();
+    }
+
+    // ==================== BACKUP E RESTORE ====================
+    function backupDatabase() {
+        const backup = {
+            empresas: getEmpresas(),
+            users: getUsers(),
+            pastas: getPastas(),
+            documentos: getDocumentos(),
+            expandedFolders: getExpandedFolders(),
+            version: "1.0",
+            date: new Date().toISOString()
+        };
+        const dataStr = JSON.stringify(backup, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `docmanager_backup_${new Date().toISOString().slice(0,19)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast("Backup criado com sucesso!");
+    }
+
+    function restoreDatabase(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const backup = JSON.parse(e.target.result);
+                if (backup.empresas) saveEmpresas(backup.empresas);
+                if (backup.users) saveUsers(backup.users);
+                if (backup.pastas) savePastas(backup.pastas);
+                if (backup.documentos) saveDocumentos(backup.documentos);
+                if (backup.expandedFolders) saveExpandedFolders(backup.expandedFolders);
+                showToast("Base de dados restaurada com sucesso!");
+                setTimeout(() => location.reload(), 1500);
+            } catch (err) {
+                showToast("Erro ao restaurar: arquivo inválido");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function clearDatabase() {
+        if (confirm("ATENÇÃO: Esta ação irá apagar TODOS os dados (empresas, usuários, pastas e documentos). Esta ação não pode ser desfeita! Continuar?")) {
+            localStorage.clear();
+            loadData();
+            showToast("Base de dados apagada. Recarregando...");
+            setTimeout(() => location.reload(), 1500);
+        }
+    }
+
+    // ==================== PASTAS ====================
+    function getFolderPath(folderId) {
+        const pastas = getPastas();
+        const path = [];
+        let current = pastas.find(p => p.id === folderId);
+        while (current) { path.unshift(current); current = pastas.find(p => p.id === current.parentId); }
+        return path;
+    }
+
+    function renderBreadcrumb() {
+        const container = document.getElementById("breadcrumbArea");
+        if (!container) return;
+        if (!currentFolderId) { container.innerHTML = '<span>📁 Raiz</span>'; return; }
+        const path = getFolderPath(currentFolderId);
+        let html = '<span class="breadcrumb-item" data-id="null">Raiz</span>';
+        path.forEach(folder => { html += `<span> / </span><span class="breadcrumb-item" data-id="${folder.id}">${folder.nome}</span>`; });
+        container.innerHTML = html;
+        document.querySelectorAll('.breadcrumb-item').forEach(el => {
+            el.addEventListener('click', () => {
+                currentFolderId = el.getAttribute('data-id') === 'null' ? null : parseInt(el.getAttribute('data-id'));
+                renderAll();
+            });
+        });
+    }
+
+    function toggleFolderExpanded(folderId) {
+        const expanded = getExpandedFolders();
+        expanded[folderId] = !expanded[folderId];
+        saveExpandedFolders(expanded);
+        renderFolderTree();
+    }
+
+    function renderFolderTree() {
+        const pastas = getPastas().filter(p => p.empresa === currentEmpresa);
+        const expanded = getExpandedFolders();
+        function buildTree(parentId = null, level = 0) {
+            const children = pastas.filter(p => p.parentId === parentId);
+            if (children.length === 0) return '';
+            let html = '<ul class="tree-node" style="list-style:none;">';
+            for (const folder of children) {
+                const hasChildren = pastas.some(p => p.parentId === folder.id);
+                const isExpanded = expanded[folder.id] === true;
+                const isActive = currentFolderId === folder.id;
+                html += `<li><div class="tree-item-wrapper ${isActive ? 'active' : ''}" data-id="${folder.id}">${hasChildren ? `<span class="expand-icon" data-expand="${folder.id}">${isExpanded ? '▼' : '▶'}</span>` : '<span class="expand-icon"></span>'}<span class="folder-icon">📁</span><span class="folder-name">${folder.nome}</span><div class="folder-actions"><button class="icon-btn create-subfolder" data-id="${folder.id}" title="Subpasta">+</button><button class="icon-btn move-folder" data-id="${folder.id}" title="Mover">↗</button><button class="icon-btn delete-folder" data-id="${folder.id}" title="Excluir">🗑</button></div></div>${hasChildren && isExpanded ? `<div class="children-container">${buildTree(folder.id, level + 1)}</div>` : ''}</li>`;
+            }
+            html += '</ul>';
+            return html;
+        }
+        const container = document.getElementById("folderTree");
+        if (container) container.innerHTML = buildTree(null) || '<div style="padding:16px; color:#94a3b8;">Nenhuma pasta</div>';
+        
+        document.querySelectorAll('.expand-icon[data-expand]').forEach(el => {
+            el.addEventListener('click', (e) => { e.stopPropagation(); toggleFolderExpanded(parseInt(el.getAttribute('data-expand'))); });
+        });
+        document.querySelectorAll('.tree-item-wrapper').forEach(el => {
+            el.addEventListener('click', (e) => {
+                if (e.target.classList.contains('icon-btn') || e.target.classList.contains('expand-icon')) return;
+                currentFolderId = parseInt(el.getAttribute('data-id'));
+                renderAll();
+            });
+        });
+        document.querySelectorAll('.create-subfolder').forEach(btn => {
+            btn.addEventListener('click', (e) => { e.stopPropagation(); const name = prompt("Nome da subpasta:"); if (name) createFolderAt(name, parseInt(btn.getAttribute('data-id'))); });
+        });
+        document.querySelectorAll('.move-folder').forEach(btn => {
+            btn.addEventListener('click', (e) => { e.stopPropagation(); showMoveFolderModal(parseInt(btn.getAttribute('data-id'))); });
+        });
+        document.querySelectorAll('.delete-folder').forEach(btn => {
+            btn.addEventListener('click', (e) => { e.stopPropagation(); const id = parseInt(btn.getAttribute('data-id')); if (confirm("Excluir pasta?")) { deleteFolderRecursive(id); if (currentFolderId === id) currentFolderId = null; renderAll(); showToast("Pasta removida"); } });
+        });
+    }
+    
+    function createFolderAt(nome, parentId) { if (!nome.trim()) return; const pastas = getPastas(); pastas.push({ id: Date.now(), nome: nome.trim(), empresa: currentEmpresa, parentId: parentId }); savePastas(pastas); renderAll(); showToast(`Pasta "${nome}" criada`); }
+    function deleteFolderRecursive(folderId) { const pastas = getPastas(); const docs = getDocumentos(); pastas.filter(p => p.parentId === folderId).forEach(sp => deleteFolderRecursive(sp.id)); savePastas(pastas.filter(p => p.id !== folderId)); saveDocumentos(docs.filter(d => d.pastaId !== folderId)); }
+    function moveFolder(folderId, newParentId) { if (folderId === newParentId) return false; const pastas = getPastas(); const idx = pastas.findIndex(p => p.id === folderId); if (idx !== -1) { pastas[idx].parentId = newParentId; savePastas(pastas); renderAll(); showToast("Pasta movida"); return true; } return false; }
+    
+    function showMoveFolderModal(folderId) {
+        const pastas = getPastas().filter(p => p.empresa === currentEmpresa && p.id !== folderId);
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `<div class="modal-content"><h3>Mover Pasta</h3><div id="folderSelectList" style="max-height:300px; overflow-y:auto;"></div><div style="display:flex; gap:12px; margin-top:20px;"><button id="confirmMove">Mover</button><button id="cancelMove">Cancelar</button></div></div>`;
+        document.body.appendChild(modal);
+        function buildOptions(parentId = null, level = 0) { let html = ''; pastas.filter(p => p.parentId === parentId).forEach(f => { html += `<div class="folder-option" data-id="${f.id}" style="padding-left:${level * 20 + 12}px">📁 ${f.nome}</div>${buildOptions(f.id, level + 1)}`; }); return html; }
+        document.getElementById('folderSelectList').innerHTML = `<div class="folder-option" data-id="null">📁 Raiz</div>${buildOptions(null, 1)}`;
+        document.querySelectorAll('.folder-option').forEach(opt => opt.addEventListener('click', function() { document.querySelectorAll('.folder-option').forEach(o => o.classList.remove('selected')); this.classList.add('selected'); }));
+        document.getElementById('confirmMove').onclick = () => { const selected = document.querySelector('.folder-option.selected'); if (selected) moveFolder(folderId, selected.getAttribute('data-id') === 'null' ? null : parseInt(selected.getAttribute('data-id'))); modal.remove(); };
+        document.getElementById('cancelMove').onclick = () => modal.remove();
+    }
+    
+    // ==================== DOCUMENTOS ====================
+    function moveDocumentsToFolder(docIds, targetFolderId) {
+        let docs = getDocumentos();
+        docIds.forEach(id => { const doc = docs.find(d => d.id === id); if (doc) { doc.pastaId = targetFolderId; doc.modifiedBy = currentUser.username; doc.data = new Date().toISOString(); addHistory(id, "Movimentação", `Movido para pasta ID ${targetFolderId}`); } });
+        saveDocumentos(docs);
+        selectedDocs.clear();
+        renderDocuments();
+        updateMultiActionBar();
+        showToast(`${docIds.length} documento(s) movido(s)`);
+    }
+    
+    function batchDeleteSelected() {
+        if (selectedDocs.size === 0) { showToast("Nenhum documento selecionado"); return; }
+        if (confirm(`Excluir ${selectedDocs.size} documento(s) permanentemente?`)) {
+            let docs = getDocumentos().filter(d => !selectedDocs.has(d.id));
+            saveDocumentos(docs);
+            selectedDocs.clear();
+            renderDocuments();
+            updateMultiActionBar();
+            showToast(`${selectedDocs.size} documento(s) removido(s)`);
+        }
+    }
+    
+    function renderDocuments() {
+        if (!currentFolderId) {
+            const container = document.getElementById("docsContainer");
+            if (container) container.innerHTML = '<div style="padding:40px; text-align:center;">📁 Selecione uma pasta</div>';
+            return;
+        }
+        const docs = getDocumentos().filter(d => d.pastaId === currentFolderId && d.empresa === currentEmpresa);
+        
+        if (viewMode === "list") {
+            let html = `<table class="docs-table"><thead><tr><th style="width:28px"><input type="checkbox" id="selectAllCheckbox"></th><th>Nome</th><th>Tipo</th><th>Tamanho</th><th>Criação</th><th>Criador</th><th>Edição</th><th style="white-space:nowrap;">Ações</th></tr></thead><tbody>`;
+            docs.forEach(doc => {
+                const isImage = doc.tipo?.startsWith("image/");
+                const checked = selectedDocs.has(doc.id) ? 'checked' : '';
+                html += `<tr data-doc-id="${doc.id}"><td><input type="checkbox" class="doc-checkbox" data-id="${doc.id}" ${checked}></td><td><strong>${doc.nome.length > 35 ? doc.nome.substring(0, 32) + '...' : doc.nome}</strong></td><td>${isImage ? '🖼️' : '📄'}</td><td>${formatFileSize(doc.tamanho || (doc.base64?.length * 0.75) || 0)}</td><td>${new Date(doc.dataCriacao || doc.data).toLocaleDateString()}</td><td>${doc.criadoPor || doc.modifiedBy || "sistema"}</td><td>${new Date(doc.data).toLocaleDateString()}</td><td class="action-buttons-cell"><div class="action-buttons-group"><button class="action-icon rename-doc" data-id="${doc.id}" data-name="${doc.nome}" title="Renomear">✏️</button><button class="action-icon view-doc" data-id="${doc.id}" data-type="${doc.tipo}" data-base64="${doc.base64}" title="Visualizar">👁️</button><button class="action-icon history-doc" data-id="${doc.id}" data-name="${doc.nome}" title="Histórico">📖</button><a href="${doc.base64}" download="${doc.nome}" class="action-icon" title="Download">⬇️</a></div></td></tr>`;
+            });
+            html += `</tbody>${'耀'}`;
+            const container = document.getElementById("docsContainer");
+            if (container) container.innerHTML = docs.length ? html : '<div style="padding:40px; text-align:center;">Nenhum documento</div>';
+            
+            document.getElementById('selectAllCheckbox')?.addEventListener('change', (e) => { docs.forEach(d => e.target.checked ? selectedDocs.add(d.id) : selectedDocs.delete(d.id)); renderDocuments(); updateMultiActionBar(); });
+        } else {
+            let html = '<div class="docs-grid">';
+            docs.forEach(doc => {
+                const isImage = doc.tipo?.startsWith("image/");
+                const checked = selectedDocs.has(doc.id) ? 'checked' : '';
+                html += `<div class="grid-card" data-doc-id="${doc.id}"><input type="checkbox" class="doc-checkbox" data-id="${doc.id}" ${checked}><div class="grid-preview">${isImage ? '🖼️' : '📄'}</div><div style="font-size:11px; font-weight:500;">${doc.nome.substring(0, 20)}</div><div style="font-size:9px; color:#64748b;">${new Date(doc.data).toLocaleDateString()}</div><div class="action-buttons-group" style="display:flex; gap:4px; margin-top:6px; flex-wrap:wrap;"><button class="action-icon rename-doc" data-id="${doc.id}" data-name="${doc.nome}">✏️</button><button class="action-icon view-doc" data-id="${doc.id}" data-type="${doc.tipo}" data-base64="${doc.base64}">👁️</button><button class="action-icon history-doc" data-id="${doc.id}" data-name="${doc.nome}">📖</button><a href="${doc.base64}" download="${doc.nome}" class="action-icon">⬇️</a></div></div>`;
+            });
+            html += '</div>';
+            const container = document.getElementById("docsContainer");
+            if (container) container.innerHTML = docs.length ? html : '<div style="padding:40px; text-align:center;">Nenhum documento</div>';
+        }
+        
+        document.querySelectorAll('.doc-checkbox').forEach(cb => {
+            cb.addEventListener('change', (e) => { const id = parseInt(cb.getAttribute('data-id')); if (cb.checked) selectedDocs.add(id); else selectedDocs.delete(id); updateMultiActionBar(); });
+        });
+        document.querySelectorAll('.rename-doc').forEach(btn => {
+            btn.addEventListener('click', () => { const id = parseInt(btn.getAttribute('data-id')); const oldName = btn.getAttribute('data-name'); const newName = prompt("Novo nome:", oldName); if (newName?.trim()) { let docs = getDocumentos(); const doc = docs.find(d => d.id === id); if (doc) { doc.nome = newName.trim(); doc.modifiedBy = currentUser.username; doc.data = new Date().toISOString(); addHistory(id, "Renomeação", `"${oldName}" → "${newName}"`); saveDocumentos(docs); renderDocuments(); showToast("Renomeado"); } } });
+        });
+        document.querySelectorAll('.view-doc').forEach(btn => {
+            btn.addEventListener('click', () => { const type = btn.getAttribute('data-type'); const base64 = btn.getAttribute('data-base64'); if (type?.startsWith('image/')) { const viewer = document.createElement('div'); viewer.className = 'fullscreen-viewer'; viewer.innerHTML = `<img src="${base64}"><button style="position:fixed; top:20px; right:20px; background:white; border:none; padding:8px 20px; border-radius:30px;">Fechar</button>`; viewer.querySelector('button').onclick = () => viewer.remove(); document.body.appendChild(viewer); } else { showToast("Visualização apenas para imagens"); } });
+        });
+        document.querySelectorAll('.history-doc').forEach(btn => { btn.addEventListener('click', () => showHistoryModal(parseInt(btn.getAttribute('data-id')), btn.getAttribute('data-name'))); });
+    }
+    
+    function updateMultiActionBar() {
+        const bar = document.getElementById("multiActionBar");
+        if (bar) {
+            const count = selectedDocs.size;
+            document.getElementById("selectedCount").innerText = `${count} documento(s) selecionado(s)`;
+            bar.classList.toggle("hidden", count === 0);
+        }
+    }
+    
+    function showMoveDocsModal(docIds) {
+        if (docIds.length === 0) return;
+        const pastas = getPastas().filter(p => p.empresa === currentEmpresa);
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `<div class="modal-content"><h3>Mover ${docIds.length} documento(s)</h3><div id="moveDocFolderList" style="max-height:300px; overflow-y:auto; margin-bottom:16px;"></div><div style="display:flex; gap:12px;"><button id="confirmMoveDocs" style="background:#10b981; color:white;">Mover</button><button id="cancelMoveDocs">Cancelar</button></div></div>`;
+        document.body.appendChild(modal);
+        function buildOptions(parentId = null, level = 0) {
+            let html = '';
+            pastas.filter(p => p.parentId === parentId).forEach(f => {
+                html += `<div class="folder-option" data-id="${f.id}" style="padding-left:${level * 20 + 12}px">📁 ${f.nome}</div>`;
+                html += buildOptions(f.id, level + 1);
+            });
+            return html;
+        }
+        document.getElementById('moveDocFolderList').innerHTML = buildOptions(null, 0);
+        document.querySelectorAll('.folder-option').forEach(opt => opt.addEventListener('click', function() {
+            document.querySelectorAll('.folder-option').forEach(o => o.classList.remove('selected'));
+            this.classList.add('selected');
+        }));
+        document.getElementById('confirmMoveDocs').onclick = () => {
+            const selected = document.querySelector('.folder-option.selected');
+            if (selected) moveDocumentsToFolder(docIds, parseInt(selected.getAttribute('data-id')));
+            modal.remove();
+        };
+        document.getElementById('cancelMoveDocs').onclick = () => modal.remove();
+    }
+    
+    // ==================== UPLOAD ====================
+    async function uploadSingleFile(file, customName = null) {
+        if (!currentFolderId) { showToast("Selecione uma pasta primeiro"); return false; }
+        let base64Data, fileType = file.type, fileName = customName || file.name;
+        if (file.type.startsWith("image/")) {
+            base64Data = await resizeImage(file, 1024);
+            fileType = "image/jpeg";
+            if (!customName) fileName = fileName.replace(/\.[^/.]+$/, ".jpg") + "_opt.jpg";
+        } else {
+            base64Data = await readFileAsBase64(file);
+        }
+        if (base64Data) {
+            const docs = getDocumentos();
+            docs.push({ id: Date.now() + Math.random(), nome: fileName, base64: base64Data, tipo: fileType, pastaId: currentFolderId, empresa: currentEmpresa, data: new Date().toISOString(), dataCriacao: new Date().toISOString(), criadoPor: currentUser.username, modifiedBy: currentUser.username, tamanho: file.size, history: [{ date: new Date().toISOString(), user: currentUser.username, action: "Criação", details: `Documento "${fileName}" criado` }] });
+            saveDocumentos(docs);
+            renderDocuments();
+            return true;
+        }
+        return false;
+    }
+    
+    async function uploadMultipleFiles(files) {
+        if (!currentFolderId) { showToast("Selecione uma pasta primeiro"); return; }
+        if (!files || files.length === 0) return;
+        if (isUploading) { showToast("Aguarde o upload atual terminar"); return; }
+        
+        const progressContainer = document.getElementById("progressBarContainer");
+        const progressFill = document.getElementById("progressFill");
+        const progressText = document.getElementById("progressText");
+        
+        progressContainer.classList.add("active");
+        isUploading = true;
+        let uploaded = 0;
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const percent = Math.round((i / files.length) * 100);
+            progressFill.style.width = `${percent}%`;
+            progressText.innerText = `Processando: ${i+1} de ${files.length} - ${file.name.substring(0,30)}`;
+            
+            let base64Data, fileType = file.type, fileName = file.name;
+            if (file.type.startsWith("image/")) {
+                base64Data = await resizeImage(file, 1024);
+                fileType = "image/jpeg";
+                fileName = fileName.replace(/\.[^/.]+$/, ".jpg") + "_opt.jpg";
+            } else {
+                base64Data = await readFileAsBase64(file);
+            }
+            if (base64Data) {
+                const docs = getDocumentos();
+                docs.push({ id: Date.now() + Math.random(), nome: fileName, base64: base64Data, tipo: fileType, pastaId: currentFolderId, empresa: currentEmpresa, data: new Date().toISOString(), dataCriacao: new Date().toISOString(), criadoPor: currentUser.username, modifiedBy: currentUser.username, tamanho: file.size, history: [{ date: new Date().toISOString(), user: currentUser.username, action: "Criação", details: `Documento "${fileName}" criado` }] });
+                saveDocumentos(docs);
+                uploaded++;
+            }
+            await new Promise(r => setTimeout(r, 10));
+        }
+        
+        progressFill.style.width = `100%`;
+        progressText.innerText = `Concluído! ${uploaded} arquivo(s) enviado(s)`;
+        setTimeout(() => {
+            progressContainer.classList.remove("active");
+            progressFill.style.width = "0%";
+        }, 2000);
+        
+        renderDocuments();
+        showToast(`${uploaded} arquivo(s) enviado(s)`);
+        isUploading = false;
+    }
+    
+    function setupFileInput() {
+        const fileInput = document.getElementById("hiddenFileInput");
+        if (!fileInput) return;
+        const newFileInput = fileInput.cloneNode(true);
+        fileInput.parentNode.replaceChild(newFileInput, fileInput);
+        newFileInput.onchange = async (e) => { if (newFileInput.files && newFileInput.files.length) { await uploadMultipleFiles(Array.from(newFileInput.files)); newFileInput.value = ""; } };
+        document.getElementById("galleryUploadBtn").onclick = () => { newFileInput.removeAttribute("capture"); newFileInput.setAttribute("accept", "image/*"); newFileInput.multiple = true; newFileInput.click(); };
+        document.getElementById("fileUploadBtn").onclick = () => { newFileInput.removeAttribute("capture"); newFileInput.setAttribute("accept", "image/*,application/pdf"); newFileInput.multiple = true; newFileInput.click(); };
+    }
+    
+    function setupDragAndDrop() {
+        const container = document.getElementById("docsContainer");
+        if (!container) return;
+        const newContainer = container.cloneNode(true);
+        container.parentNode.replaceChild(newContainer, container);
+        newContainer.addEventListener('dragover', (e) => { e.preventDefault(); newContainer.classList.add('drag-over'); });
+        newContainer.addEventListener('dragleave', () => { newContainer.classList.remove('drag-over'); });
+        newContainer.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            newContainer.classList.remove('drag-over');
+            const files = Array.from(e.dataTransfer.files);
+            if (files.length > 0) { await uploadMultipleFiles(files); }
+            e.dataTransfer.clearData();
+        });
+    }
+    
+    // ==================== CÂMARA COM NOMEAÇÃO ====================
+    async function startCameraCapture() {
+        cameraPages = [];
+        if (currentStream) { currentStream.getTracks().forEach(track => track.stop()); }
+        try {
+            currentStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        } catch (err) { showToast("Erro ao acessar câmera: " + err.message); return; }
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `<div class="modal-content" style="max-width:500px;"><h3 style="margin-bottom:12px;">📸 Capturar Páginas</h3><input type="text" id="docNameInput" placeholder="Nome do documento (opcional)" style="margin-bottom:10px;"><video id="cameraVideo" autoplay playsinline style="width:100%; border-radius:12px; background:#000;"></video><div style="display:flex; gap:10px; margin:15px 0; flex-wrap:wrap;"><button id="capturePageBtn" style="flex:1; background:#2c7da0; color:white;">📷 Capturar</button><button id="finishCaptureBtn" style="flex:1; background:#10b981; color:white;">✅ Salvar PDF (0 págs)</button></div><div id="pagesPreview" style="max-height:150px; overflow-y:auto; margin-bottom:10px;"></div><button id="cancelCaptureBtn" style="width:100%;">Cancelar</button></div>`;
+        document.body.appendChild(modal);
+        
+        const video = modal.querySelector('#cameraVideo');
+        video.srcObject = currentStream;
+        
+        const updateUI = () => {
+            modal.querySelector('#finishCaptureBtn').innerHTML = `✅ Salvar PDF (${cameraPages.length} págs)`;
+            const preview = modal.querySelector('#pagesPreview');
+            preview.innerHTML = cameraPages.map((_, idx) => `<div class="page-preview"><span>📄 Página ${idx+1} capturada</span><button class="remove-page" data-index="${idx}" style="background:#dc2626; color:white; border:none; padding:2px 8px; border-radius:4px;">Remover</button></div>`).join('');
+            document.querySelectorAll('.remove-page').forEach(btn => {
+                btn.addEventListener('click', (e) => { const idx = parseInt(btn.getAttribute('data-index')); cameraPages.splice(idx, 1); updateUI(); showToast(`Página ${idx+1} removida`); });
+            });
+        };
+        
+        modal.querySelector('#capturePageBtn').onclick = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            cameraPages.push(canvas.toDataURL('image/jpeg', 0.7));
+            updateUI();
+            showToast(`Página ${cameraPages.length} capturada`);
+        };
+        
+        modal.querySelector('#finishCaptureBtn').onclick = async () => {
+            if (cameraPages.length === 0) { showToast("Capture pelo menos uma página"); return; }
+            try {
+                const docName = modal.querySelector('#docNameInput').value.trim();
+                const fileName = docName ? `${docName}.pdf` : `documento_camera_${Date.now()}.pdf`;
+                
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+                for (let i = 0; i < cameraPages.length; i++) {
+                    if (i > 0) pdf.addPage();
+                    const imgData = cameraPages[i];
+                    const imgProps = pdf.getImageProperties(imgData);
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+                }
+                const pdfBlob = pdf.output('blob');
+                await uploadSingleFile(new File([pdfBlob], fileName, { type: 'application/pdf' }), fileName);
+                if (currentStream) { currentStream.getTracks().forEach(track => track.stop()); currentStream = null; }
+                modal.remove();
+                showToast("PDF salvo com sucesso!");
+            } catch (error) { showToast("Erro ao criar PDF: " + error.message); }
+        };
+        modal.querySelector('#cancelCaptureBtn').onclick = () => { if (currentStream) { currentStream.getTracks().forEach(track => track.stop()); currentStream = null; } modal.remove(); };
+        updateUI();
+    }
+    
+    function readFileAsBase64(file) { return new Promise((resolve) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => resolve(null); reader.readAsDataURL(file); }); }
+    function resizeImage(file, maxSize) {
+        return new Promise((resolve) => { const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.onload = function() { let width = img.width, height = img.height; if (width > height && width > maxSize) { height = (height * maxSize) / width; width = maxSize; } else if (height > maxSize) { width = (width * maxSize) / height; height = maxSize; } const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height; const ctx = canvas.getContext("2d"); ctx.drawImage(img, 0, 0, width, height); canvas.toBlob(blob => { const reader2 = new FileReader(); reader2.onload = () => resolve(reader2.result); reader2.readAsDataURL(blob); }, 'image/jpeg', 0.7); }; img.src = e.target.result; }; reader.readAsDataURL(file); });
+    }
+    
+    // ==================== ADMIN ====================
+    function isGlobalAdmin() { return currentUser && currentUser.role === "global_admin" && currentEmpresa === "Matriz"; }
+    
+    function renderAdminModal() {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `<div class="modal-content"><h3>⚙️ Administração</h3>
+            <h4 style="margin:12px 0 8px;">Empresas</h4><div id="adminEmpresasList" style="margin-bottom:12px;"></div>
+            <input type="text" id="newEmpresaName" placeholder="Nova empresa" style="margin-bottom:8px;"><button id="addEmpresaBtn">Criar Empresa</button>
+            <h4 style="margin:20px 0 8px;">Usuários</h4><div id="adminUsersList" style="margin-bottom:12px;"></div>
+            <input type="text" id="newUserName" placeholder="Usuário" style="margin-bottom:6px;">
+            <input type="password" id="newUserPass" placeholder="Senha" style="margin-bottom:6px;">
+            <select id="newUserEmpresaSelect" style="margin-bottom:8px;"></select>
+            <button id="addUserBtn">Adicionar Usuário</button>
+            <h4 style="margin:20px 0 8px;">💾 Backup e Restore</h4>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+                <button id="backupBtn" style="flex:1; background:#10b981; color:white;">📥 Backup</button>
+                <button id="restoreBtn" style="flex:1; background:#f59e0b; color:white;">📂 Restaurar</button>
+                <button id="clearDbBtn" style="flex:1; background:#dc2626; color:white;">🗑️ Apagar Tudo</button>
+            </div>
+            <input type="file" id="restoreFileInput" accept=".json" style="display:none;">
+            <button id="closeAdminBtn" style="margin-top:20px;">Fechar</button></div>`;
+        document.body.appendChild(modal);
+        
+        const refresh = () => {
+            document.getElementById("adminEmpresasList").innerHTML = getEmpresas().map(e => `<div>🏢 ${e}</div>`).join('');
+            document.getElementById("adminUsersList").innerHTML = getUsers().map(u => `<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0;">👤 ${u.username} (${u.empresa}) ${u.role === 'global_admin' ? '⭐' : ''}<button class="del-user" data-user="${u.username}" style="background:#fee2e2; padding:2px 8px; border-radius:20px;">X</button></div>`).join('');
+            document.getElementById("newUserEmpresaSelect").innerHTML = getEmpresas().map(e => `<option value="${e}">${e}</option>`).join('');
+        };
+        refresh();
+        
+        document.getElementById("addEmpresaBtn").onclick = () => { const nome = document.getElementById("newEmpresaName").value.trim(); if (nome && !getEmpresas().includes(nome)) { saveEmpresas([...getEmpresas(), nome]); refresh(); showToast("Empresa criada"); } };
+        document.getElementById("addUserBtn").onclick = () => { const u = document.getElementById("newUserName").value.trim(), p = document.getElementById("newUserPass").value.trim(), e = document.getElementById("newUserEmpresaSelect").value; if (u && p && e) { let users = getUsers(); if (!users.find(us => us.username === u)) { users.push({ username: u, password: p, empresa: e, role: "user" }); saveUsers(users); refresh(); showToast("Usuário criado"); } } };
+        document.querySelectorAll(".del-user").forEach(btn => { btn.onclick = () => { saveUsers(getUsers().filter(u => u.username !== btn.getAttribute("data-user"))); refresh(); showToast("Removido"); }; });
+        
+        // Backup
+        document.getElementById("backupBtn").onclick = () => backupDatabase();
+        
+        // Restore
+        const restoreInput = document.getElementById("restoreFileInput");
+        document.getElementById("restoreBtn").onclick = () => restoreInput.click();
+        restoreInput.onchange = (e) => { if (e.target.files.length) { restoreDatabase(e.target.files[0]); modal.remove(); } };
+        
+        // Apagar tudo
+        document.getElementById("clearDbBtn").onclick = () => { clearDatabase(); modal.remove(); };
+        
+        document.getElementById("closeAdminBtn").onclick = () => modal.remove();
+    }
+    
+    function saveSession() { if (currentUser) { localStorage.setItem("docmanager_user", currentUser.username); localStorage.setItem("docmanager_empresa", currentEmpresa); localStorage.setItem("docmanager_folder", currentFolderId || ""); } }
+    function clearSession() { localStorage.removeItem("docmanager_user"); localStorage.removeItem("docmanager_empresa"); localStorage.removeItem("docmanager_folder"); }
+    function loadSession() { const savedUser = localStorage.getItem("docmanager_user"); const savedEmpresa = localStorage.getItem("docmanager_empresa"); if (savedUser && savedEmpresa) { const user = getUsers().find(u => u.username === savedUser && u.empresa === savedEmpresa); if (user) { currentUser = user; currentEmpresa = savedEmpresa; currentFolderId = localStorage.getItem("docmanager_folder") ? parseInt(localStorage.getItem("docmanager_folder")) : null; return true; } } return false; }
+    
+    function renderAll() {
+        renderFolderTree();
+        renderDocuments();
+        renderBreadcrumb();
+        updateMultiActionBar();
+        setupFileInput();
+        setupDragAndDrop();
+    }
+    
+    function renderMain() {
+        document.getElementById("app").innerHTML = `<div class="main-layout"><div class="sidebar"><div class="sidebar-header"><h2>📂 DocManager</h2><div class="user-info">👤 ${currentUser.username}<br>🏢 ${currentEmpresa}${isGlobalAdmin() ? ' ⭐ Admin' : ''}</div></div><div class="folder-tree-container"><div style="margin-bottom:8px;"><button id="newRootFolderBtn" style="width:100%;">+ Nova Pasta</button></div><div id="folderTree"></div></div><div class="sidebar-footer">${isGlobalAdmin() ? '<button id="adminConfigBtn" class="config-btn">⚙️ Administração</button>' : ''}<button id="logoutBtn" class="config-btn">🚪 Sair</button></div></div><div class="main-content"><div class="top-bar"><div class="breadcrumb-area" id="breadcrumbArea"></div><div class="upload-group"><button id="cameraUploadBtn" class="upload-btn">📷 Câmera</button><button id="galleryUploadBtn" class="upload-btn">🖼️ Galeria</button><button id="fileUploadBtn" class="upload-btn">📎 Arquivo</button></div><div class="drag-message">📌 Arraste documentos aqui</div><div class="view-controls"><button id="listViewBtn" class="view-btn ${viewMode === 'list' ? 'active' : ''}">📋 Lista</button><button id="gridViewBtn" class="view-btn ${viewMode === 'grid' ? 'active' : ''}">🔲 Grade</button></div></div><div id="progressBarContainer" class="progress-bar-container"><div class="progress-info" id="progressText">Enviando...</div><div class="progress-bar-wrapper"><div id="progressFill" class="progress-fill"></div></div></div><div id="multiActionBar" class="multi-action-bar hidden"><span class="selected-info">✅ <span id="selectedCount">0</span> documento(s) selecionado(s)</span><button id="batchMoveBtn" class="multi-action-btn">📂 Mover Selecionados</button><button id="batchDeleteBtn" class="multi-action-btn danger">🗑️ Excluir Selecionados</button><button id="clearSelectionBtn" class="multi-action-btn">Limpar</button></div><div class="documents-container" id="docsContainer"></div></div></div><input type="file" id="hiddenFileInput" accept="image/*,application/pdf" multiple style="display:none;">`;
+        
+        renderAll();
+        
+        document.getElementById("newRootFolderBtn").onclick = () => { const name = prompt("Nome da pasta:"); if (name) createFolderAt(name, currentFolderId); };
+        document.getElementById("logoutBtn").onclick = () => { clearSession(); currentUser = null; renderLogin(); };
+        if (isGlobalAdmin()) document.getElementById("adminConfigBtn").onclick = () => renderAdminModal();
+        document.getElementById("cameraUploadBtn").onclick = () => startCameraCapture();
+        document.getElementById("listViewBtn").onclick = () => { viewMode = "list"; renderMain(); };
+        document.getElementById("gridViewBtn").onclick = () => { viewMode = "grid"; renderMain(); };
+        document.getElementById("batchMoveBtn").onclick = () => { if (selectedDocs.size) showMoveDocsModal(Array.from(selectedDocs)); };
+        document.getElementById("batchDeleteBtn").onclick = () => batchDeleteSelected();
+        document.getElementById("clearSelectionBtn").onclick = () => { selectedDocs.clear(); renderMain(); };
+    }
+    
+    function renderLogin() {
+        const empresas = getEmpresas();
+        document.getElementById("app").innerHTML = `<div class="login-container"><div class="login-card"><h1>📁 DocManager</h1><p style="margin-bottom:24px;">Multi-Empresa · Gestão Documental</p><input type="text" id="loginUser" placeholder="Usuário"><input type="password" id="loginPass" placeholder="Senha" style="margin-top:12px;"><select id="loginEmpresa" style="margin-top:12px;">${empresas.map(e => `<option value="${e}">${e}</option>`).join('')}</select><button id="doLogin" style="margin-top:20px;">Entrar</button><p style="margin-top:16px; font-size:12px; text-align:center;">admin / admin123</p></div></div>`;
+        document.getElementById("doLogin").onclick = () => { const u = document.getElementById("loginUser").value.trim(), p = document.getElementById("loginPass").value.trim(), e = document.getElementById("loginEmpresa").value; const user = getUsers().find(us => us.username === u && us.password === p && us.empresa === e); if (user) { currentUser = user; currentEmpresa = e; currentFolderId = null; selectedDocs.clear(); saveSession(); renderMain(); } else showToast("Credenciais inválidas"); };
+    }
+    
+    loadData();
+    if (loadSession()) renderMain(); else renderLogin();
+</script>
+</body>
+</html>
